@@ -1,3 +1,3 @@
 # CARLA-2DBox-AutoAnnotation-Tool
-## (Carla Vehicle Annotator)
+## Carla Vehicle Annotator
 README under construction
