@@ -90,9 +90,9 @@ while True:
   if not cameraQueue.empty() and not depthQueue.empty():
     camera_data = cameraQueue.get()
     depth_data = depthQueue.get()
-    depth_map = extract_depth(depth_data)
-    result , removed = auto_annotate(vehicles, camera, depth_map)
-    save_output(camera_data, result[‘bbox’])
+    depth_map = cva.extract_depth(depth_data)
+    result , removed = cva.auto_annotate(vehicles, camera, depth_map)
+    cva.save_output(camera_data, result[‘bbox’])
 ...
 ```
 
