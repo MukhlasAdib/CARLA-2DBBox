@@ -73,6 +73,29 @@ Argument:
 Return:
 - **`depth_meter` (`float` 2D numpy array)**: depth map of the corresponding input in meter unit.
 
+Implementation example, assuming that world and the actors have been set.
+
+```python
+import carla_vehicle_annotator as cva
+import queue
+...
+cameraQueue = queue.Queue()
+depthQueue = queue.Queue()
+camera.listen(cameraQueue.put())
+depth.listen(depthQueue.put())
+
+while True:
+  world.tick()
+  vehicles = world.get_actors().filter(‘vehicle.*’)
+  if not cameraQueue.empty() and not depthQueue.empty():
+    camera_data = cameraQueue.get()
+    depth_data = depthQueue.get()
+    depth_map = extract_depth(depth_data)
+    result , removed = auto_annotate(vehicles, camera, depth_map)
+    save_output(camera_data, result[‘bbox’])
+...
+```
+
 ## `test_draw_bb.py`
 
 Run this program to test how the algorithm works. This program will load interactive window that contains view from a car camera perspective. You can control the car manually so that you can evaluate the performance of the algorithm directly. You can change the values of filter parameters and see how changing these parameters can effect the performance of the filter.
