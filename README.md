@@ -2,7 +2,7 @@
 
 This repo contains several python file that can be used to automatically create 2D counding box for vehicles from a camera view point in CARLA Simulator. To  use this, you need to import `carla_vehicle_annotator.py` to your python code and use the available functions. The other provided files are used to do supporting tasks that will be explained in this file.
 
-**IMPORTANT.** Some parts of the provided code are not made by me and copied from CARLA example code. CARLA Simulator and its example code are licenced under the terms of MIT Licence. For more information about CARLA, I highly recommend you to visit their website https://carla.org.
+Some parts of the provided code are not made by me and copied from CARLA example code. CARLA Simulator and its example code are licenced under the terms of MIT Licence. For more information about CARLA, I highly recommend you to visit their website https://carla.org.
 
 ## `carla_vehicle_annotator.py`
 
