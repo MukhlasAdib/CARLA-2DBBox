@@ -1,2 +1,3 @@
 theme: jekyll-theme-cayman
 title: Automatic Vehicle 2D Bounding Box Annotation Module for CARLA Simulator
+description: For you who need to extract vehicle bounding box for object detection task 
