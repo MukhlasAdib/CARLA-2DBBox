@@ -34,7 +34,7 @@ The result and removed dictionaries contain the following keys - values:
 Notes:
 - Make sure that the depth camera and RGB camera have the same attributes and transformation, and their data are taken in the same time.
 - You might wonder why you need the removed bounding boxes. The occlusion filter is not 100% accurate. Therefore, you might want to have the list bounding boxes removed by the occlusion filter so that you can return the removed bounding box if you find that it is a false removal.
-- For a quick review about how the algorithm works, I recommend you to visit this site.
+- For a quick review about how the algorithm works, I recommend you to visit [my page](https://mukhlasadib.github.io/CARLA-2DBBox/).
 
 ### `void save_output(carla_img, bboxes, vehicle_class=None, old_bboxes=None, old_vehicle_class=None, cc_rgb=carla.ColorConverter.Raw, path=‘’, save_patched=False, add_data=None, out_format=‘pickle’)`
 
