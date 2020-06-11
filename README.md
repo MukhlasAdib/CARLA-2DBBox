@@ -6,7 +6,7 @@ As a simulator for autonomous driving development, CARLA offers numerous feature
 
 Visit [my github repo](https://github.com/MukhlasAdib/CARLA-2DBBox) to get the code. Import `carla_vehicle_annotator` to your code, and see how it works by only using one function.
 
-**IMPORTANT**. Some parts of the provided codes are not made by me and copied from a CARLA example code. CARLA Simulator and its example codes are licenced under the terms of MIT Licence. For more information about CARLA, I highly recommend you to visit their website https:\\carla.org.
+**IMPORTANT**. Some parts of the provided codes are not made by me and copied from a CARLA example code. CARLA Simulator and its example codes are licenced under the terms of MIT Licence. For more information about CARLA, I highly recommend you to visit their website https://carla.org.
 
 The 2D bounding boxes are made from the projected 3D bounding box of vehicles in the camera image. Converting 3D bounding box to 2D bounding box is not a hard task, but choosing which vehicles visible to the camera is quite challenging. I use three kinds of filter to do this:
 
