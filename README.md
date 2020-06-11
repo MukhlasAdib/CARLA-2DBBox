@@ -1,8 +1,8 @@
+<head><meta name="google-site-verification" content="HkCtu3fhjx8zGjg3mr7stI4I2kSkyXEwvRxYX6ZjCn4" /></head>
+
 # Automatic Vehicle 2D Bounding Box Annotation Module for CARLA Simulator
 ### by MukhlasAdib
 #### Last edited: June 10th, 2020
-
-Hello!
 
 As a simulator for autonomous driving development, CARLA offers numerous features ready to use for its users. One of them is feature to extract 3D bounding box of vehicle. But unexpectedly, I couldn’t find any function to retrieve 2D bounding boxes in an image so far. Since I need that function for my thesis research, I made a simple module that can be easily used to get 2D bounding box of visible vehicles in the camera perspective. 
 
