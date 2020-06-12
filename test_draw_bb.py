@@ -33,11 +33,12 @@ import os
 import sys
 
 try:
-    sys.path.append(glob.glob('../../carla/dist/carla-*%d.%d-%s.egg' % (
+    sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
         sys.version_info.minor,
         'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
 except IndexError:
+    print('carla not found')
     pass
 
 
@@ -81,6 +82,16 @@ D_COLOR = (0, 0, 240)
 depth_queue = queue.Queue()
 
 # ==============================================================================
+# -- set filter parameters -----------------------------------------------------
+# ==============================================================================
+
+max_distance = 100
+depth_margin = -1
+patch_ratio = 0.5
+resize_ratio=0.5
+
+
+# ==============================================================================
 # -- ClientSideBoundingBoxes ---------------------------------------------------
 # ==============================================================================
 
@@ -105,11 +116,11 @@ class ClientSideBoundingBoxes(object):
             depth_meter = np.array(depth_img.raw_data).reshape((VIEW_HEIGHT,VIEW_WIDTH,4))[:,:,0] * 1000 / 255
         else:
             depth_meter = np.array([[0]])
-        vehicles = carla_vehicle_annotator.filter_angle_distance(vehicles , camera)
+        vehicles = carla_vehicle_annotator.filter_angle_distance(vehicles , camera, max_distance)
         bounding_boxes_3d = [ClientSideBoundingBoxes.get_bounding_box(vehicle, camera) for vehicle in vehicles]
         bounding_boxes_2d = [carla_vehicle_annotator.p3d_to_p2d_bb(bbox) for bbox in bounding_boxes_3d]
         vehicle_class = carla_vehicle_annotator.get_vehicle_class(vehicles, 'vehicle_class_json_file.txt')
-        filtered_out,removed_out,depth_area,depth_capture = carla_vehicle_annotator.filter_occlusion_bbox(bounding_boxes_2d,vehicles,camera,depth_meter,vehicle_class,depth_capture)
+        filtered_out,removed_out,depth_area,depth_capture = carla_vehicle_annotator.filter_occlusion_bbox(bounding_boxes_2d,vehicles,camera,depth_meter,vehicle_class,depth_capture,depth_margin, patch_ratio, resize_ratio)
         if save_out:
             carla_vehicle_annotator.save_output(carla_rgb, filtered_out['bbox'], filtered_out['class'], removed_out['bbox'], removed_out['class'], save_patched=True, out_format='json')
         
