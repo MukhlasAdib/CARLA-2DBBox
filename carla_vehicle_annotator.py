@@ -314,7 +314,10 @@ def filter_occlusion_bbox(bounding_boxes, vehicles, sensor, depth_img, v_class=N
 def depth_debug(depth_patches, depth_img, sensor):
     CAM_W = int(sensor.attributes['image_size_x'])
     CAM_H = int(sensor.attributes['image_size_y'])
-    depth_img = depth_img/1000*255
+    #depth_img = depth_img/1000*255
+    depth_img = np.log10(depth_img)
+    depth_img = depth_img*255/4
+    depth_img
     depth_3ch = np.zeros((CAM_H,CAM_W,3))
     depth_3ch[:,:,0] = depth_3ch[:,:,1] = depth_3ch[:,:,2] = depth_img
     depth_3ch = np.uint8(depth_3ch)
