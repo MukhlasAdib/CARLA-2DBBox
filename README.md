@@ -27,9 +27,9 @@ Return:
 - **`removed` (dictionary):** python dictionary that contains the bounding boxes, vehicle actor, and the corresponding label of the vehicles that are removed by the occlusion filter. 
 
 The result and removed dictionaries contain the following keys - values:
-- key: `vehicles` - value (list of `carla.Actor`): the list of vehicle actors.
-- key: `bbox` - value (list of `int` 2D numpy array): the list of bounding boxes where each bounding box represented by two (min and max) corner points (in (x,y) format) of the box. The i-th element of the list is the bounding box for i-th vehicle in `vehicles`.
-- key: `class` - value (list of `int`): the list of vehicle class. The i-th element of the list is the class label for i-th vehicle in `vehicles`.
+- key: `"vehicles"` - value (list of `carla.Actor`): the list of vehicle actors.
+- key: `"bbox"` - value (list of `int` 2D numpy array): the list of bounding boxes where each bounding box represented by two (min and max) corner points (in (x,y) format) of the box. The i-th element of the list is the bounding box for i-th vehicle in `"vehicles"`.
+- key: `"class"` - value (list of `int`): the list of vehicle class. The i-th element of the list is the class label for i-th vehicle in `"vehicles"`.
 
 Notes:
 - Make sure that the depth camera and RGB camera have the same attributes and transformation, and their data are taken in the same time.
@@ -42,10 +42,10 @@ Use this function to save the result of `auto_annotate( )` into your local direc
 
 Arguments:
 - **`carla_img` (`carla.Image`):** object (carla image) returned by the RGB camera at the time the bounding boxes are calculated.
-- **`bboxes` (list of `float` 2D numpy array):** list of bounding boxes coordinates that you want to save. You can get it from the returned value `result` of `auto_annotate( )` with key `bbox`.
-- **`vehicle_class` (list of `int` ; default None):** the list of visible vehilcles’ class. You can get it from the returned value `result` of `auto_annotate( )` with key `class`. Set this to None if you don’t want to save this information. 
-- **`old_bboxes` (list of `int` 2D numpy array ; default None):** list of bounding boxes that are removed by the occlusion filter. You can get it from the returned value `removed` of `auto_annotate( )` with key `bbox`. Set this to None if you don’t want to save this information.
-- **`old_vehicle_class` (list of `int` ; default None):** the list of vehicles’ class that are removed by the occlusion filter. You can get it from the returned value `removed` of `auto_annotate( )` with key `class`. Set this to None if you don’t want to save this information.
+- **`bboxes` (list of `float` 2D numpy array):** list of bounding boxes coordinates that you want to save. You can get it from the returned value `result` of `auto_annotate( )` with key `"bbox"`.
+- **`vehicle_class` (list of `int` ; default None):** the list of visible vehilcles’ class. You can get it from the returned value `result` of `auto_annotate( )` with key `"class"`. Set this to None if you don’t want to save this information. 
+- **`old_bboxes` (list of `int` 2D numpy array ; default None):** list of bounding boxes that are removed by the occlusion filter. You can get it from the returned value `removed` of `auto_annotate( )` with key `"bbox"`. Set this to None if you don’t want to save this information.
+- **`old_vehicle_class` (list of `int` ; default None):** the list of vehicles’ class that are removed by the occlusion filter. You can get it from the returned value `removed` of `auto_annotate( )` with key `"class"`. Set this to None if you don’t want to save this information.
 - **`cc_rgb` (`carla.ColorConverter` ; default `carla.ColorConverter.Raw`):** image color style that you want to use for the RGB image.
 - **`path` (string ; default ‘’)**: the folder path where you want to save the result (ex: *‘/this/path/‘*).
 - **`save_patched` (`bool` ; default False):** set this to True if you want to save the image with drawn bounding boxes.
@@ -53,11 +53,11 @@ Arguments:
 - **`out_format` (string ; default ‘pickle’)**: the file format to save the result and removed bounding boxes and class and also the additional information `add_data`. Only support *‘json’* (.txt) and *‘pickle’* (.pkl). Any format you choose, this information will be packed as python dictionary when you import the file to your python program.
 
 This function will create three folders in `path`, which are *out_rgb* that contains RGB image, *out_bbox* that contains bounding boxes and other data formatted in pickle or JSON, and *out_rgb_bbox* that contains RGB image with drawn bounding boxes. Folder *out_rgb_bbox* will only be created if you set parameter `save_patched` to True. Data taken from the same moment are named with the same name in these three folders, so that you can find which bounding boxes file that corresponds to which image easily. Information that packed in *out_bbox*’s files are packed as python dictionary. This dictionary contains these keys - values:
-- key: `bboxes` - value: data passed to `bboxes` argument
-- key: `vehicle_class` - value: data passed to `vehicle_class` argument
-- key: `removed_bboxes` - value: data passed to `old_bboxes` argument
-- key: `removed_vehicle_class` - value: data passed to `old_vehicle_class` argument
-- key: `others` - value: data passed to `add_data` argument
+- key: `"bboxes"` - value: data passed to `bboxes` argument
+- key: `"vehicle_class"` - value: data passed to `vehicle_class` argument
+- key: `"removed_bboxes"` - value: data passed to `old_bboxes` argument
+- key: `"removed_vehicle_class"` - value: data passed to `old_vehicle_class` argument
+- key: `"others"` - value: data passed to `add_data` argument
 
 Notes:
 - Make sure you put ending slash *‘/‘* behind the folder path that you pass into `path` argument.
