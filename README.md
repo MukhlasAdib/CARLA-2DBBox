@@ -13,7 +13,7 @@ There are several functions that is provided in this module. However, you only n
 This function process the vehicles and image information and retrieve the 2D bounding box pixel coordinates for each visible vehicle with the corresponding vehicle’s class
 
 Arguments:
-- **`vehicles` (list of `carla.Actor`):** list that contain vehicle actors that you want to consider. You can pass list of all vehicles that have been spawned in Carla world.
+- **`vehicles` (list of `carla.Actor` or `carla.ActorSnapShot`):** list that contains vehicle actors/snapshots that you want to consider. You can pass list of all vehicles that have been spawned in Carla world. If you pass vehicles' snapshot, make sure that you add `bounding_box` and `type_id` instances to the snapshot. Use `snap_processing( )` function to add the instances automatically.
 - **`camera` (`carla.Sensor`):** the RGB camera object (carla sensor).
 - **`depth_img` (`float` 2D numpy array):** the depth map taken from the same view of RGB camera in meter unit. You can get it from the output of depth camera manually or by using `extract_depth( )` function.
 - **`max_dist` (`float` ; default 100):** the maximum distance parameter for distance filter. Increasing this value will allow the function to return vehicles that is located in greater distance, and thus with smaller bounding box. 
@@ -33,6 +33,8 @@ The result and removed dictionaries contain the following keys - values:
 
 Notes:
 - Make sure that the depth camera and RGB camera have the same attributes and transformation, and their data are taken in the same time.
+- Make sure that the vehicles' data (transformation) are taken in the same frame with the RGB and Depth image. Open `collectData.py` to see the tested implementation example. The trick is to pass vehicle snapshot that you can get from `carla.world.on_tick( )` instead of vehicle actor to `vehicles` argument. Using `carla.world.on_tick( )` allows you to get vehicles' data in the same frame with the other sensor data. Again, make sure that you add `boudning_box` and `type_id` instances to the snapshot by using `snap_processing( )` function.
+- If you find that the bounding box algorithm's performance is not satisfying, try to change the value of filter parameters: `depth_margin`, `patch_ratio`, `resize_ratio`.
 - You might wonder why you need the removed bounding boxes. The occlusion filter is not 100% accurate. Therefore, you might want to have the list bounding boxes removed by the occlusion filter so that you can return the removed bounding box if you find that it is a false removal.
 - For a quick review about how the algorithm works, I recommend you to visit [my page](https://mukhlasadib.github.io/CARLA-2DBBox/).
 
@@ -73,28 +75,16 @@ Argument:
 Return:
 - **`depth_meter` (`float` 2D numpy array)**: depth map of the corresponding input in meter unit.
 
-Implementation example, assuming that world and the actors have been set.
+### `vehicles = snap_processing(vehiclesActor, worldSnap)`
 
-```python
-import carla_vehicle_annotator as cva
-import queue
-...
-cameraQueue = queue.Queue()
-depthQueue = queue.Queue()
-camera.listen(cameraQueue.put())
-depth.listen(depthQueue.put())
+Use this function to add `bounding_box` and `type_id` instances to vehicles snapshot based on actual vehicles actor data.
 
-while True:
-  world.tick()
-  vehicles = world.get_actors().filter(‘vehicle.*’)
-  if not cameraQueue.empty() and not depthQueue.empty():
-    camera_data = cameraQueue.get()
-    depth_data = depthQueue.get()
-    depth_map = cva.extract_depth(depth_data)
-    result , removed = cva.auto_annotate(vehicles, camera, depth_map)
-    cva.save_output(camera_data, result[‘bbox’])
-...
-```
+Argument:
+- **`vehiclesActor` (list of `carla.Actor`)**: list of vehicle actors that you are interested in, which you can get from `carla.world.get_actors( )` function.
+- **`worldSnap` (`carla.WorldSnapshot`)**: The world snapshot that contains your vehicles snapshot.
+
+Return:
+- **`vehicles` (list of `carla.ActorSnapshot`)**: List of snapshot of vehicles that exist in both `vehiclesActor` and `worldSnap`. The snapshots have two additional instances, which are `bounding_box` and `type_id` that are taken from actor information.
 
 ## `test_draw_bb.py`
 
@@ -105,6 +95,10 @@ Run this program to test how the algorithm works. This program will load interac
 Run this program to create *vehicle_class_json_file.txt*. This file is a JSON formatted data that map each vehicle types available in Carla to one integer label. Definition of each label is also packed in the JSON file. The default label mapping file has been provided in my repo. But you can create your own label mapping file by running and edit this program.
 
 This program has two variables that you can modify. One of them is `autoFill`, which if you set to True, the program will automatically create mapping file that maps all vehicle types to class label 0. The other one is `class_ref`, which is a dictionary that defines the definition of each class label. After you run the program (if `autoFill` is set to False), check your Carla window and it will show each vehicle types. All you have to do is type the vehicle’s class in your python window. I think it is quite intuitive.
+
+## `collectData.py`
+
+This program is an example of working `carla_vehicle_annotator` implementation. This program will capture sensors data every 1 second in simulation time. The sensors are RGB camera (with Bouncing Box), depth camera, segmentation camera, and LIDAR camera. If you think that the bounding box results is poor, you can change the filter parameters in `auto_annotate( )` function to get better result. 
 
 That’s all I have for you. Have fun with CARLA and keep supporting CARLA project. Thank you.
 
