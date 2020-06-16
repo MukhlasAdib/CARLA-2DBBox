@@ -264,7 +264,7 @@ def filter_occlusion_bbox(bounding_boxes, vehicles, sensor, depth_img, v_class=N
     for v, vs, bbox in zip(vehicles,v_transform_s,bounding_boxes):
         dist = vs[:,0]
         if depth_margin < 0:
-            depth_margin = (v.bounding_box.extent.x**2+v.bounding_box.extent.y**2)**0.5
+            depth_margin = (v.bounding_box.extent.x**2+v.bounding_box.extent.y**2)**0.5 + 0.25
         uc = int((bbox[0,0]+bbox[1,0])/2)
         vc = int((bbox[0,1]+bbox[1,1])/2)
         wp = int((bbox[1,0]-bbox[0,0])*resize_ratio/2)
@@ -414,6 +414,18 @@ def extract_depth(depth_img):
     depth_img.convert(carla.ColorConverter.Depth)
     depth_meter = np.array(depth_img.raw_data).reshape((depth_img.height,depth_img.width,4))[:,:,0] * 1000 / 255
     return depth_meter
+
+def snap_processing(vehiclesActor, worldSnap):
+    vehicles = []
+    for v in vehiclesActor:
+        vid = v.id
+        vsnap = worldSnap.find(vid)
+        if vsnap is None:
+            continue
+        vsnap.bounding_box = v.bounding_box
+        vsnap.type_id = v.type_id
+        vehicles.append(vsnap)
+    return vehicles
 
 #######################################################
 #######################################################
