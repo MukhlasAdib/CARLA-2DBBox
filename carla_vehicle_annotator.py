@@ -17,6 +17,7 @@ from PIL import ImageDraw
 import json
 import pickle
 import os
+import glob
 
 ### PART 0
 ### Calculate bounding boxes and apply the filter ###
@@ -409,12 +410,61 @@ def save_output(carla_img, bboxes, vehicle_class=None, old_bboxes=None, old_vehi
             os.makedirs(os.path.dirname(filename))
         image.save(filename)
 
+def save2darknet(bboxes, vehicle_class, carla_img, class_desc = None, data_path = '', cc_rgb = carla.ColorConverter.Raw, save_train = False):
+    # check whether target path exists
+    data_path = data_path + '/data'
+    if not os.path.exists(os.path.dirname(data_path)):
+        os.makedirs(os.path.dirname(data_path))
+        print(data_path + ' directory did not exists, new directory created')
+    obj_path = data_path + '/obj'
+    if not os.path.exists(os.path.dirname(obj_path)):
+        print(obj_path + ' directory did not exists, new directory created')
+        os.makedirs(os.path.dirname(obj_path))
+     
+    if carla_img is not None:
+        # save image
+        carla_img.convert(cc_rgb)
+        img_bgra = np.array(carla_img.raw_data).reshape((carla_img.height,carla_img.width,4))
+        img_rgb = np.zeros((carla_img.height,carla_img.width,3))
+        img_rgb[:,:,0] = img_bgra[:,:,2]
+        img_rgb[:,:,1] = img_bgra[:,:,1]
+        img_rgb[:,:,2] = img_bgra[:,:,0]
+        img_rgb = np.uint8(img_rgb)
+        image = Image.fromarray(img_rgb, 'RGB')
+        image.save(obj_path + '/%06d.jpg' % carla_img.frame)
+        
+        # save bounding box data
+        datastr = ''
+        for box, v_class in zip(bboxes, vehicle_class):
+            uc = ((box[0,0] + box[1,0])/2) / carla_img.width
+            vc = ((box[0,1] + box[1,1])/2) / carla_img.height
+            w = (box[1,0] - box[0,0]) / carla_img.width
+            h = (box[1,1] - box[0,1]) / carla_img.height
+            datastr = datastr + f"{v_class} {uc} {vc} {w} {v} \r\n"
+        with open(obj_path + '/%06d.txt' % carla_img.frame, 'w') as filetxt:
+            filetxt.write(datastr)
+            filetxt.close()
+            
+    # save train.txt
+    if save_train:
+        img_list = glob.glob('obj_path' + '/*.jpg')
+        if len(img_list) == 0:
+            print('no image found')
+        else:
+            trainstr = ''
+            for imgname in img_list:
+                trainstr = trainstr + '/data/obj/' + imgname + '\r\n'
+             with open(data_path + '/train.txt', 'w') as filetxt:
+                filetxt.write(trainstr)
+                filetxt.close()
+            
 ### Use this function to convert depth image (carla.Image) to a depth map in meter
 def extract_depth(depth_img):
     depth_img.convert(carla.ColorConverter.Depth)
     depth_meter = np.array(depth_img.raw_data).reshape((depth_img.height,depth_img.width,4))[:,:,0] * 1000 / 255
     return depth_meter
 
+### Use this function to get vehciles' snapshots that can be processed by auto_annotate() function.
 def snap_processing(vehiclesActor, worldSnap):
     vehicles = []
     for v in vehiclesActor:
