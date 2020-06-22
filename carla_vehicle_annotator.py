@@ -410,18 +410,22 @@ def save_output(carla_img, bboxes, vehicle_class=None, old_bboxes=None, old_vehi
             os.makedirs(os.path.dirname(filename))
         image.save(filename)
 
-def save2darknet(bboxes, vehicle_class, carla_img, class_desc = None, data_path = '', cc_rgb = carla.ColorConverter.Raw, save_train = False):
+### Use this function to save bounding box result in darknet training format
+def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carla.ColorConverter.Raw, save_train = False):
     # check whether target path exists
-    data_path = data_path + '/data'
+    data_path = data_path + 'data/'
     if not os.path.exists(os.path.dirname(data_path)):
         os.makedirs(os.path.dirname(data_path))
         print(data_path + ' directory did not exists, new directory created')
-    obj_path = data_path + '/obj'
+    obj_path = data_path + 'obj/'
     if not os.path.exists(os.path.dirname(obj_path)):
         print(obj_path + ' directory did not exists, new directory created')
-        os.makedirs(os.path.dirname(obj_path))
-     
-    if carla_img is not None:
+        os.makedirs(os.path.dirname(obj_path))    
+    
+    bbr = bboxes is not None
+    vcr = vehicle_class is not None
+    cir = carla_img is not None
+    if bbr or vcr or cir:
         # save image
         carla_img.convert(cc_rgb)
         img_bgra = np.array(carla_img.raw_data).reshape((carla_img.height,carla_img.width,4))
@@ -431,6 +435,7 @@ def save2darknet(bboxes, vehicle_class, carla_img, class_desc = None, data_path 
         img_rgb[:,:,2] = img_bgra[:,:,0]
         img_rgb = np.uint8(img_rgb)
         image = Image.fromarray(img_rgb, 'RGB')
+        #os.makedirs(os.path.dirname(obj_path + '/%06d.jpg' % carla_img.frame))
         image.save(obj_path + '/%06d.jpg' % carla_img.frame)
         
         # save bounding box data
@@ -440,21 +445,22 @@ def save2darknet(bboxes, vehicle_class, carla_img, class_desc = None, data_path 
             vc = ((box[0,1] + box[1,1])/2) / carla_img.height
             w = (box[1,0] - box[0,0]) / carla_img.width
             h = (box[1,1] - box[0,1]) / carla_img.height
-            datastr = datastr + f"{v_class} {uc} {vc} {w} {v} \r\n"
+            datastr = datastr + f"{v_class} {uc} {vc} {w} {h} \n"
         with open(obj_path + '/%06d.txt' % carla_img.frame, 'w') as filetxt:
             filetxt.write(datastr)
             filetxt.close()
             
     # save train.txt
     if save_train:
-        img_list = glob.glob('obj_path' + '/*.jpg')
+        img_list = glob.glob(obj_path + '/*.jpg')
         if len(img_list) == 0:
             print('no image found')
         else:
             trainstr = ''
             for imgname in img_list:
-                trainstr = trainstr + '/data/obj/' + imgname + '\r\n'
-             with open(data_path + '/train.txt', 'w') as filetxt:
+                trainstr = trainstr + imgname + '\n'
+            trainstr = trainstr.replace('\\','/')
+            with open(data_path + '/train.txt', 'w') as filetxt:
                 filetxt.write(trainstr)
                 filetxt.close()
             
