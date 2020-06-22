@@ -123,6 +123,7 @@ class ClientSideBoundingBoxes(object):
         filtered_out,removed_out,depth_area,depth_capture = carla_vehicle_annotator.filter_occlusion_bbox(bounding_boxes_2d,vehicles,camera,depth_meter,vehicle_class,depth_capture,depth_margin, patch_ratio, resize_ratio)
         if save_out:
             carla_vehicle_annotator.save_output(carla_rgb, filtered_out['bbox'], filtered_out['class'], removed_out['bbox'], removed_out['class'], save_patched=True, out_format='json')
+            #carla_vehicle_annotator.save2darknet(filtered_out['bbox'], filtered_out['class'], carla_rgb, save_train=True)
         
         return filtered_out['bbox'] , depth_area, depth_capture
 
