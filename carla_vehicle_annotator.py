@@ -38,7 +38,7 @@ def auto_annotate(vehicles, camera, depth_img, max_dist=100, depth_margin=-1, pa
 ### Same with auto_annotate(), but with debugging function for the occlusion filter
 def auto_annotate_debug(vehicles, camera, depth_img, depth_show=False, max_dist=100, depth_margin=-1, patch_ratio=0.5, resize_ratio=0.5, json_path=None):
     vehicles = filter_angle_distance(vehicles, camera, max_dist)
-    bounding_boxes_2d = [get_2d_bb(vehicle, sensor) for vehicle in vehicles]
+    bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in vehicles]
     if json_path is not None:
         vehicle_class = get_vehicle_class(vehicles, json_path)
     else:
@@ -379,13 +379,13 @@ def save_output(carla_img, bboxes, vehicle_class=None, old_bboxes=None, old_vehi
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
         with open(filename, 'w') as outfile:
-            json_file = json.dump(out_dict, outfile, indent=4)
+            json.dump(out_dict, outfile, indent=4)
     else:
         filename = path + 'out_bbox/%06d.pkl' % carla_img.frame
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
         with open(filename, 'w') as outfile:
-            json_file = json.dump(out_dict, outfile, indent=4)     
+            json.dump(out_dict, outfile, indent=4)     
 
     if save_patched:
         carla_img.convert(cc_rgb)
@@ -411,8 +411,10 @@ def save_output(carla_img, bboxes, vehicle_class=None, old_bboxes=None, old_vehi
         image.save(filename)
 
 ### Use this function to save bounding box result in darknet training format
-def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carla.ColorConverter.Raw, save_train = False):
+def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carla.ColorConverter.Raw, save_train = False, customName=''):
     # check whether target path exists
+    if customName != '':
+        customName = '_' + str(customName)
     data_path = data_path + 'data/'
     if not os.path.exists(os.path.dirname(data_path)):
         os.makedirs(os.path.dirname(data_path))
@@ -436,7 +438,7 @@ def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carl
         img_rgb = np.uint8(img_rgb)
         image = Image.fromarray(img_rgb, 'RGB')
         #os.makedirs(os.path.dirname(obj_path + '/%06d.jpg' % carla_img.frame))
-        image.save(obj_path + '/%06d.jpg' % carla_img.frame)
+        image.save(obj_path + '/%06d' % carla_img.frame + str(customName) + '.jpg')
         
         # save bounding box data
         datastr = ''
@@ -446,7 +448,7 @@ def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carl
             w = (box[1,0] - box[0,0]) / carla_img.width
             h = (box[1,1] - box[0,1]) / carla_img.height
             datastr = datastr + f"{v_class} {uc} {vc} {w} {h} \n"
-        with open(obj_path + '/%06d.txt' % carla_img.frame, 'w') as filetxt:
+        with open(obj_path + '/%06d' % carla_img.frame + str(customName) + '.txt', 'w') as filetxt:
             filetxt.write(datastr)
             filetxt.close()
             
