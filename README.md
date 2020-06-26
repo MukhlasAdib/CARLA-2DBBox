@@ -76,7 +76,7 @@ Arguments:
 - **`data_path` (`string` ; default `''`):** path where `darknet.exe` is located. It should be located in `[DARKNET_PATH]/build/darknet/x64/`. This function willl create new folder `/data` (relative to `data_path`) that contains folder `obj` and file `train.txt` (if you set `save_train` to True).
 - **`cc_rgb` (`carla.ColorConverter` ; default `carla.ColorConverter.Raw`):** image color style that you want to use for the RGB image.
 - **`save_train` (`bool` ; default `False`):** set this value to `True` if you want to create `train.txt` file in `/data`. If set this to true, this function will scan all JPG files that exist in `/data/obj/` and will recreate `train.txt` according to the detected JPG files. Therefore I suggest you to use this feature only in the end of your data aggregation process. You can set `bboxes`,`vehicle_class` or `carla_img` to None if you want to use this feature withput creating new training data.
-- **`customName` (`string` ; default `''`):** string passed to this argument will be added to the image name. The output image's name format will be `frameNumber_customName.jpg`. If this argument is set to default, the output image's name format will be `frameNumber.jpg`.
+- **`customName` (`string` ; default `''`):** string passed to this argument will be added to the image name. The output image's name format will be `customName_frameNumber.jpg`. If this argument is set to default, the output image's name format will be `frameNumber.jpg`.
 
 Notes:
 - You have to create `obj.names` and `obj.names` manually.
