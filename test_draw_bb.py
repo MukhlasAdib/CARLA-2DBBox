@@ -318,7 +318,6 @@ class BasicSynchronousClient(object):
         if number_of_npc < number_of_spawn_points:
             random.shuffle(self.spawn_points)
         elif number_of_npc > number_of_spawn_points:
-            msg = 'Requested %d vehicles, but could only find %d spawn points'
             number_of_npc = number_of_spawn_points
 
         blueprints = self.world.get_blueprint_library().filter('vehicle.*')

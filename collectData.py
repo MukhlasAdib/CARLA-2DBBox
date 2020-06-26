@@ -243,7 +243,7 @@ def main():
             if save_depth:
                 depth_img.save_to_disk('out_depth/%06d.png' % depth_img.frame, cc_depth_log)
             depth_meter = cva.extract_depth(depth_img)
-            filtered, removed =  cva.auto_annotate(vehicles, cam, depth_meter, json_path='vehicle_class_json_file.txt')
+            filtered, _ =  cva.auto_annotate(vehicles, cam, depth_meter, json_path='vehicle_class_json_file.txt')
             #cva.save_output(rgb_img, filtered['bbox'], filtered['class'], removed['bbox'], removed['class'], save_patched=True, out_format='json')
             cva.save2darknet(filtered['bbox'], filtered['class'], rgb_img)
 
