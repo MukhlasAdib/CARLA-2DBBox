@@ -414,7 +414,7 @@ def save_output(carla_img, bboxes, vehicle_class=None, old_bboxes=None, old_vehi
 def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carla.ColorConverter.Raw, save_train = False, customName=''):
     # check whether target path exists
     if customName != '':
-        customName = '_' + str(customName)
+        customName = str(customName) + '_'
     data_path = data_path + 'data/'
     if not os.path.exists(os.path.dirname(data_path)):
         os.makedirs(os.path.dirname(data_path))
@@ -438,7 +438,7 @@ def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carl
         img_rgb = np.uint8(img_rgb)
         image = Image.fromarray(img_rgb, 'RGB')
         #os.makedirs(os.path.dirname(obj_path + '/%06d.jpg' % carla_img.frame))
-        image.save(obj_path + '/%06d' % carla_img.frame + str(customName) + '.jpg')
+        image.save(obj_path + '/' + str(customName) + '%06d.jpg' % carla_img.frame)
         
         # save bounding box data
         datastr = ''
@@ -448,7 +448,7 @@ def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carl
             w = (box[1,0] - box[0,0]) / carla_img.width
             h = (box[1,1] - box[0,1]) / carla_img.height
             datastr = datastr + f"{v_class} {uc} {vc} {w} {h} \n"
-        with open(obj_path + '/%06d' % carla_img.frame + str(customName) + '.txt', 'w') as filetxt:
+        with open(obj_path + '/' + str(customName) + '%06d.txt' % carla_img.frame, 'w') as filetxt:
             filetxt.write(datastr)
             filetxt.close()
             
