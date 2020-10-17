@@ -243,7 +243,7 @@ def filter_occlusion_1p(vehicles_list, v_transform, v_transform_s, sensor, depth
 def filter_angle_distance(vehicles_list, sensor, max_dist=100):
     depth_patches = []
     vehicles_transform , vehicles_transform_s = get_list_transform(vehicles_list, sensor)
-    vehicles_list , vehicles_transform , vehicles_transform_s = filter_distance(vehicles_list, vehicles_transform, vehicles_transform_s, sensor, 100)
+    vehicles_list , vehicles_transform , vehicles_transform_s = filter_distance(vehicles_list, vehicles_transform, vehicles_transform_s, sensor, max_dist)
     vehicles_list , vehicles_transform , vehicles_transform_s = filter_angle(vehicles_list, vehicles_transform, vehicles_transform_s, sensor)
     return vehicles_list
 
