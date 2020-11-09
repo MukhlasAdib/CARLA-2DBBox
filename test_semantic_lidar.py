@@ -59,7 +59,7 @@ def main():
     argparser.add_argument(
         '-n', '--number-of-vehicles',
         metavar='N',
-        default=50,
+        default=100,
         type=int,
         help='number of vehicles (default: 10)')
     argparser.add_argument(
@@ -193,6 +193,8 @@ def main():
         while True:
             # Extract the available data
             nowFrame = world.tick()
+
+            # Check whether it's time for sensor to capture data
             if time_sim >= 1:
                 data = [retrieve_data(q,nowFrame) for q in q_list]
                 print(data)
@@ -206,8 +208,16 @@ def main():
                 snap = data[tick_idx]
                 rgb_img = data[cam_idx]
                 lidar_img = data[lidar_idx]
+                
+                # Attach additional information to the snapshot
+                vehicles = cva.snap_processing(vehicles_raw, snap)
+
+                # Begin calculating visible bounding boxes
+                v_bboxes = cva.auto_annotate_lidar(vehicles, cam, lidar_img)
+                print(v_bboxes)
+                cva.save_output(rgb_img, v_bboxes, save_patched=True, out_format='json')
                 time_sim = 0
-            time_sim = time_sim + 0.05
+            time_sim = time_sim + settings.fixed_delta_seconds
 
     finally:
         cam.stop()

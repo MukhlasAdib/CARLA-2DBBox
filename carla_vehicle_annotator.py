@@ -25,6 +25,15 @@ import carla
 ### Calculate bounding boxes and apply the filter ###
 #####################################################
 
+### Use this function to get 2D bounding boxes of visible vehicles to camera using semantic LIDAR
+def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100):
+    filtered_data = filter_lidar(lidar_data, camera, max_dist)
+    visible_id = np.unique([p.object_idx for p in filtered_data])
+    print(visible_id)
+    visible_vehicles = [v for v in vehicles if v.id in visible_id]
+    bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in visible_vehicles]
+    return bounding_boxes_2d
+
 ### Use this function to get 2D bounding boxes of visible vehicle to camera
 def auto_annotate(vehicles, camera, depth_img, max_dist=100, depth_margin=-1, patch_ratio=0.5, resize_ratio=0.5, json_path=None):
     depth_show = False
@@ -333,7 +342,23 @@ def depth_debug(depth_patches, depth_img, sensor):
         crop_bbox = [(u1,v1),(u2,v2)]
         img_draw.rectangle(crop_bbox, outline ="red")
     image.show()
+
+### Filter out lidar points that are outside camera FOV
+def filter_lidar(lidar_data, camera, max_dist):
+    CAM_W = int(camera.attributes['image_size_x'])
+    CAM_H = int(camera.attributes['image_size_y'])
+    CAM_HFOV = float(camera.attributes['fov'])
+    CAM_VFOV = np.rad2deg(2*np.arctan(np.tan(np.deg2rad(CAM_HFOV/2))*CAM_H/CAM_W))
+    lidar_points = np.array([[-p.point.y,p.point.x,-p.point.z] for p in lidar_data])
     
+    dist2 = np.sum(np.square(lidar_points), axis=1).reshape((-1))
+    p_angle_h = np.absolute(np.arctan2(lidar_points[:,1],lidar_points[:,0]) * 180 / np.pi).reshape((-1))
+    p_angle_v = np.absolute(np.arctan2(lidar_points[:,2],lidar_points[:,0]) * 180 / np.pi).reshape((-1))
+
+    selector = np.array(np.logical_and(dist2 < (max_dist**2), np.logical_and(p_angle_h < (CAM_HFOV/2), p_angle_v < (CAM_VFOV/2))))
+    filtered_lidar = [pt for pt, s in zip(lidar_data, selector) if s]
+    return filtered_lidar
+
 #######################################################
 #######################################################
 
