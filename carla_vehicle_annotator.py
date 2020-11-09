@@ -9,7 +9,6 @@
 ### For a copy, see <https://opensource.org/licenses/MIT>
 ### For more information about CARLA Simulator, visit https://carla.org/
 
-import carla
 import numpy as np
 import PIL
 from PIL import Image
@@ -18,6 +17,9 @@ import json
 import pickle
 import os
 import glob
+import sys
+import carla
+
 
 ### PART 0
 ### Calculate bounding boxes and apply the filter ###
@@ -241,7 +243,6 @@ def filter_occlusion_1p(vehicles_list, v_transform, v_transform_s, sensor, depth
 
 ### Apply angle and distance filters in one function
 def filter_angle_distance(vehicles_list, sensor, max_dist=100):
-    depth_patches = []
     vehicles_transform , vehicles_transform_s = get_list_transform(vehicles_list, sensor)
     vehicles_list , vehicles_transform , vehicles_transform_s = filter_distance(vehicles_list, vehicles_transform, vehicles_transform_s, sensor, max_dist)
     vehicles_list , vehicles_transform , vehicles_transform_s = filter_angle(vehicles_list, vehicles_transform, vehicles_transform_s, sensor)
@@ -260,7 +261,7 @@ def filter_occlusion_bbox(bounding_boxes, vehicles, sensor, depth_img, v_class=N
     selector = []
     patches = []
     patch_delta = []
-    v_transform, v_transform_s = get_list_transform(vehicles, sensor)
+    _, v_transform_s = get_list_transform(vehicles, sensor)
     
     for v, vs, bbox in zip(vehicles,v_transform_s,bounding_boxes):
         dist = vs[:,0]
