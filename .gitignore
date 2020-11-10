@@ -3,4 +3,5 @@ __pycache__
 out_bbox
 out_rgb
 out_rgb_bbox
+out_lidar_img
 data
