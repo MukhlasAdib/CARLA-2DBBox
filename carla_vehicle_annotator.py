@@ -350,11 +350,11 @@ def filter_lidar(lidar_data, camera, max_dist):
     CAM_H = int(camera.attributes['image_size_y'])
     CAM_HFOV = float(camera.attributes['fov'])
     CAM_VFOV = np.rad2deg(2*np.arctan(np.tan(np.deg2rad(CAM_HFOV/2))*CAM_H/CAM_W))
-    lidar_points = np.array([[-p.point.y,p.point.x,-p.point.z] for p in lidar_data])
+    lidar_points = np.array([[-p.point.z,p.point.y,p.point.x] for p in lidar_data])
     
     dist2 = np.sum(np.square(lidar_points), axis=1).reshape((-1))
-    p_angle_h = np.absolute(np.arctan2(lidar_points[:,1],lidar_points[:,0]) * 180 / np.pi).reshape((-1))
-    p_angle_v = np.absolute(np.arctan2(lidar_points[:,2],lidar_points[:,0]) * 180 / np.pi).reshape((-1))
+    p_angle_h = np.absolute(np.arctan2(lidar_points[:,0],lidar_points[:,2]) * 180 / np.pi).reshape((-1))
+    p_angle_v = np.absolute(np.arctan2(lidar_points[:,1],lidar_points[:,2]) * 180 / np.pi).reshape((-1))
 
     selector = np.array(np.logical_and(dist2 < (max_dist**2), np.logical_and(p_angle_h < (CAM_HFOV/2), p_angle_v < (CAM_VFOV/2))))
     filtered_lidar = [pt for pt, s in zip(lidar_data, selector) if s]
@@ -362,8 +362,19 @@ def filter_lidar(lidar_data, camera, max_dist):
 
 ### Save camera image with projected lidar points for debugging purpose
 def show_lidar(lidar_data, camera, carla_img):
-    lidar_np = np.array([[p.point.x,p.point.z,-p.point.y] for p in lidar_data])
+    lidar_np = np.array([[p.point.y,-p.point.z,p.point.x] for p in lidar_data])
     cam_k = get_camera_intrinsic(camera)
+
+    ###
+    CAM_W = int(camera.attributes['image_size_x'])
+    CAM_H = int(camera.attributes['image_size_y'])
+    CAM_HFOV = float(camera.attributes['fov'])
+    CAM_VFOV = np.rad2deg(2*np.arctan(np.tan(np.deg2rad(CAM_HFOV/2))*CAM_H/CAM_W))
+    angle = np.absolute(np.degrees(np.arctan2(lidar_np[:,0],lidar_np[:,2])))
+    lidar_np = lidar_np[angle <= CAM_HFOV/2,:]
+    angle = np.absolute(np.degrees(np.arctan2(lidar_np[:,1],lidar_np[:,2])))
+    lidar_np = lidar_np[angle <= CAM_VFOV/2,:]
+    ###
 
     # Project LIDAR 3D to Camera 2D
     lidar_2d = np.transpose(np.dot(cam_k,np.transpose(lidar_np)))

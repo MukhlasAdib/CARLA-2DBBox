@@ -175,7 +175,7 @@ def main():
         lidar_bp.set_attribute('channels', '64')
         lidar_bp.set_attribute('points_per_second', '1120000')
         lidar_bp.set_attribute('upper_fov', '40')
-        lidar_bp.set_attribute('upper_fov', '-40')
+        lidar_bp.set_attribute('lower_fov', '-40')
         lidar_bp.set_attribute('range', '100')
         lidar_bp.set_attribute('rotation_frequency', '20')
         lidar_transform = carla.Transform(carla.Location(x=1.5, z=2.4))
@@ -215,7 +215,7 @@ def main():
                 # Begin calculating visible bounding boxes
                 v_bboxes, filtered_data = cva.auto_annotate_lidar(vehicles, cam, lidar_img)
                 print(len(filtered_data))
-                cva.show_lidar(filtered_data, cam, rgb_img)
+                cva.show_lidar(lidar_img, cam, rgb_img)
                 print(v_bboxes)
                 cva.save_output(rgb_img, v_bboxes, save_patched=True, out_format='json')
                 time_sim = 0
