@@ -30,7 +30,6 @@ import carla
 def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100):
     filtered_data = filter_lidar(lidar_data, camera, max_dist)
     visible_id = np.unique([p.object_idx for p in filtered_data])
-    print(visible_id)
     visible_vehicles = [v for v in vehicles if v.id in visible_id]
     bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in visible_vehicles]
     return bounding_boxes_2d, filtered_data

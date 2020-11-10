@@ -1,5 +1,5 @@
 ### Example program to save several sensor data including bounding box
-### Sensors: RGB Camera (+BoundingBox), De[th Camera, Segmentation Camera, Lidar Camera
+### Sensors: RGB Camera (+BoundingBox), Semantic Lidar
 ### By Mukhlas Adib
 ### 2020
 
@@ -212,11 +212,11 @@ def main():
                 # Attach additional information to the snapshot
                 vehicles = cva.snap_processing(vehicles_raw, snap)
 
-                # Begin calculating visible bounding boxes
+                # Calculating visible bounding boxes
                 v_bboxes, filtered_data = cva.auto_annotate_lidar(vehicles, cam, lidar_img)
-                print(len(filtered_data))
+                # Show projection of LIDAR to Camera for debugging purpose
                 cva.show_lidar(lidar_img, cam, rgb_img)
-                print(v_bboxes)
+                # Save the results
                 cva.save_output(rgb_img, v_bboxes, save_patched=True, out_format='json')
                 time_sim = 0
             time_sim = time_sim + settings.fixed_delta_seconds
@@ -224,12 +224,9 @@ def main():
     finally:
         try: 
             cam.stop()
-        except: 
-            print('Camera has not been initiated')
-        try: 
             lidar.stop()
-        except:
-            print('Camera has not been initiated')
+        except: 
+            print('Sensors has not been initiated')
         
         settings = world.get_settings()
         settings.synchronous_mode = False
