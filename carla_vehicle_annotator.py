@@ -18,6 +18,7 @@ import pickle
 import os
 import glob
 import sys
+import cv2
 import carla
 
 
@@ -32,7 +33,7 @@ def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100):
     print(visible_id)
     visible_vehicles = [v for v in vehicles if v.id in visible_id]
     bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in visible_vehicles]
-    return bounding_boxes_2d
+    return bounding_boxes_2d, filtered_data
 
 ### Use this function to get 2D bounding boxes of visible vehicle to camera
 def auto_annotate(vehicles, camera, depth_img, max_dist=100, depth_margin=-1, patch_ratio=0.5, resize_ratio=0.5, json_path=None):
@@ -359,6 +360,37 @@ def filter_lidar(lidar_data, camera, max_dist):
     filtered_lidar = [pt for pt, s in zip(lidar_data, selector) if s]
     return filtered_lidar
 
+### Save camera image with projected lidar points for debugging purpose
+def show_lidar(lidar_data, camera, carla_img):
+    lidar_np = np.array([[p.point.x,p.point.z,-p.point.y] for p in lidar_data])
+    cam_k = get_camera_intrinsic(camera)
+
+    # Project LIDAR 3D to Camera 2D
+    lidar_2d = np.transpose(np.dot(cam_k,np.transpose(lidar_np)))
+    lidar_2d = (lidar_2d/lidar_2d[:,2].reshape((-1,1))).astype(int)
+
+    # Visualize the result
+    c_scale = []
+    for pts in lidar_data:
+        if pts.object_idx == 0: c_scale.append(255)
+        else: c_scale.append(0)
+
+    carla_img.convert(carla.ColorConverter.Raw)
+    img_bgra = np.array(carla_img.raw_data).reshape((carla_img.height,carla_img.width,4))
+    img_rgb = np.zeros((carla_img.height,carla_img.width,3))
+    img_rgb[:,:,0] = img_bgra[:,:,2]
+    img_rgb[:,:,1] = img_bgra[:,:,1]
+    img_rgb[:,:,2] = img_bgra[:,:,0]
+    img_rgb = np.uint8(img_rgb)
+
+    for p,c in zip(lidar_2d,c_scale):
+        c = int(c)
+        cv2.circle(img_rgb,tuple(p[:2]),1,(c,c,c),-1)
+    filename = 'out_lidar_img/%06d.jpg' % carla_img.frame
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
+    cv2.imwrite(filename, img_rgb)
+
 #######################################################
 #######################################################
 
@@ -491,7 +523,7 @@ def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carl
             with open(data_path + '/train.txt', 'w') as filetxt:
                 filetxt.write(trainstr)
                 filetxt.close()
-            
+
 ### Use this function to convert depth image (carla.Image) to a depth map in meter
 def extract_depth(depth_img):
     depth_img.convert(carla.ColorConverter.Depth)

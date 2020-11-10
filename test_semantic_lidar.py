@@ -213,15 +213,23 @@ def main():
                 vehicles = cva.snap_processing(vehicles_raw, snap)
 
                 # Begin calculating visible bounding boxes
-                v_bboxes = cva.auto_annotate_lidar(vehicles, cam, lidar_img)
+                v_bboxes, filtered_data = cva.auto_annotate_lidar(vehicles, cam, lidar_img)
+                print(len(filtered_data))
+                cva.show_lidar(filtered_data, cam, rgb_img)
                 print(v_bboxes)
                 cva.save_output(rgb_img, v_bboxes, save_patched=True, out_format='json')
                 time_sim = 0
             time_sim = time_sim + settings.fixed_delta_seconds
 
     finally:
-        cam.stop()
-        lidar.stop()
+        try: 
+            cam.stop()
+        except: 
+            print('Camera has not been initiated')
+        try: 
+            lidar.stop()
+        except:
+            print('Camera has not been initiated')
         
         settings = world.get_settings()
         settings.synchronous_mode = False
