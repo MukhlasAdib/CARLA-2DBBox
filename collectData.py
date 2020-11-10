@@ -34,9 +34,10 @@ import carla_vehicle_annotator as cva
 
 def retrieve_data(sensor_queue, frame, timeout=5):
     while True:
-        if sensor_queue.empty():
+        try:
+            data = sensor_queue.get(True,timeout)
+        except queue.Empty:
             return None
-        data = sensor_queue.get(timeout=timeout)
         if data.frame == frame:
             return data
 
@@ -44,6 +45,7 @@ save_rgb = True
 save_depth = False
 save_segm = False
 save_lidar = False
+tick_sensor = 1
 
 def main():
 
@@ -163,7 +165,7 @@ def main():
         # Spawn RGB camera
         cam_transform = carla.Transform(carla.Location(x=1.5, z=2.4))
         cam_bp = world.get_blueprint_library().find('sensor.camera.rgb')
-        cam_bp.set_attribute('sensor_tick', '1.0')
+        cam_bp.set_attribute('sensor_tick', str(tick_sensor))
         cam = world.spawn_actor(cam_bp, cam_transform, attach_to=ego_vehicle)
         nonvehicles_list.append(cam)
         cam_queue = queue.Queue()
@@ -175,7 +177,7 @@ def main():
 
         # Spawn depth camera
         depth_bp = world.get_blueprint_library().find('sensor.camera.depth')
-        depth_bp.set_attribute('sensor_tick', '1.0')
+        depth_bp.set_attribute('sensor_tick', str(tick_sensor))
         depth = world.spawn_actor(depth_bp, cam_transform, attach_to=ego_vehicle)
         cc_depth_log = carla.ColorConverter.LogarithmicDepth
         nonvehicles_list.append(depth)
@@ -189,7 +191,7 @@ def main():
         # Spawn segmentation camera
         if save_segm:
             segm_bp = world.get_blueprint_library().find('sensor.camera.semantic_segmentation')
-            segm_bp.set_attribute('sensor_tick', '1.0')
+            segm_bp.set_attribute('sensor_tick', str(tick_sensor))
             segm_transform = carla.Transform(carla.Location(x=1.5, z=2.4))
             segm = world.spawn_actor(segm_bp, segm_transform, attach_to=ego_vehicle)
             cc_segm = carla.ColorConverter.CityScapesPalette
@@ -204,7 +206,7 @@ def main():
         # Spawn LIDAR sensor
         if save_lidar:
             lidar_bp = world.get_blueprint_library().find('sensor.lidar.ray_cast')
-            lidar_bp.set_attribute('sensor_tick', '1.0')
+            lidar_bp.set_attribute('sensor_tick', str(tick_sensor))
             lidar_bp.set_attribute('channels', '64')
             lidar_bp.set_attribute('points_per_second', '1120000')
             lidar_bp.set_attribute('upper_fov', '30')
@@ -221,50 +223,62 @@ def main():
             print('LIDAR ready')
 
         # Begin the loop
+        time_sim = 0
         while True:
             # Extract the available data
             nowFrame = world.tick()
-            data = [retrieve_data(q,nowFrame) for q in q_list]
-            assert all(x.frame == nowFrame for x in data if x is not None)
 
-            # Skip if any sensor data is not available
-            if None in data:
-                continue
-            
-            vehicles_raw = world.get_actors().filter('vehicle.*')
-            snap = data[tick_idx]
-            rgb_img = data[cam_idx]
-            depth_img = data[depth_idx]
-            
-            # Attach additional information to the snapshot
-            vehicles = cva.snap_processing(vehicles_raw, snap)
+            # Check whether it's time to capture data
+            if time_sim >= tick_sensor:
+                data = [retrieve_data(q,nowFrame) for q in q_list]
+                assert all(x.frame == nowFrame for x in data if x is not None)
 
-            # Save depth image, RGB image, and Bounding Boxes data
-            if save_depth:
-                depth_img.save_to_disk('out_depth/%06d.png' % depth_img.frame, cc_depth_log)
-            depth_meter = cva.extract_depth(depth_img)
-            filtered, _ =  cva.auto_annotate(vehicles, cam, depth_meter, json_path='vehicle_class_json_file.txt')
-            #cva.save_output(rgb_img, filtered['bbox'], filtered['class'], removed['bbox'], removed['class'], save_patched=True, out_format='json')
-            cva.save2darknet(filtered['bbox'], filtered['class'], rgb_img)
+                # Skip if any sensor data is not available
+                if None in data:
+                    continue
+                
+                vehicles_raw = world.get_actors().filter('vehicle.*')
+                snap = data[tick_idx]
+                rgb_img = data[cam_idx]
+                depth_img = data[depth_idx]
+                
+                # Attach additional information to the snapshot
+                vehicles = cva.snap_processing(vehicles_raw, snap)
 
-            # Save segmentation image
-            if save_segm:
-                segm_img = data[segm_idx]
-                segm_img.save_to_disk('out_segm/%06d.png' % segm_img.frame, cc_segm)
+                # Save depth image, RGB image, and Bounding Boxes data
+                if save_depth:
+                    depth_img.save_to_disk('out_depth/%06d.png' % depth_img.frame, cc_depth_log)
+                depth_meter = cva.extract_depth(depth_img)
+                filtered, removed =  cva.auto_annotate(vehicles, cam, depth_meter, json_path='vehicle_class_json_file.txt')
+                cva.save_output(rgb_img, filtered['bbox'], filtered['class'], removed['bbox'], removed['class'], save_patched=True, out_format='json')
+                
+                # Uncomment if you want to save the data in darknet format
+                #cva.save2darknet(filtered['bbox'], filtered['class'], rgb_img)
 
-            # Save LIDAR data
-            if save_lidar:
-                lidar_data = data[lidar_idx]
-                lidar_data.save_to_disk('out_lidar/%06d.ply' % segm_img.frame)
-            
+                # Save segmentation image
+                if save_segm:
+                    segm_img = data[segm_idx]
+                    segm_img.save_to_disk('out_segm/%06d.png' % segm_img.frame, cc_segm)
+
+                # Save LIDAR data
+                if save_lidar:
+                    lidar_data = data[lidar_idx]
+                    lidar_data.save_to_disk('out_lidar/%06d.ply' % segm_img.frame)
+                
+                time_sim = 0
+            time_sim = time_sim + settings.fixed_delta_seconds
+
     finally:
         cva.save2darknet(None,None,None,save_train=True)
-        cam.stop()
-        depth.stop()
-        if save_segm:
-            segm.stop()
-        if save_lidar:
-            lidar.stop()
+        try:
+            cam.stop()
+            depth.stop()
+            if save_segm:
+                segm.stop()
+            if save_lidar:
+                lidar.stop()
+        except:
+            print("Simulation ended before sensors have been created")
         
         settings = world.get_settings()
         settings.synchronous_mode = False
