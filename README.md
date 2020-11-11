@@ -10,6 +10,8 @@ Visit [my github repo](https://github.com/MukhlasAdib/CARLA-2DBBox) to get the p
 
 **IMPORTANT**. Some parts of the provided codes are not made by me and copied from a CARLA example code. CARLA Simulator and its example codes are licenced under the terms of MIT Licence. For more information about CARLA, I highly recommend you to visit their website [https://carla.org](https://carla.org).
 
+### Exctraction Using Depth Image 
+
 The 2D bounding boxes are made from the projected 3D bounding box of vehicles in the camera image. Converting 3D bounding box to 2D bounding box is not a hard task, but choosing which vehicles visible to the camera is quite challenging. I use three kinds of filter to do this:
 
 1. Distance filter, this filter will remove vehicles that are separated too far (distance > maximum distance) from the camera. You can set the maximum distance by yourself.
@@ -39,6 +41,12 @@ The figure below is the RGB image of the previous depth image. The blue boxes is
 <img src="Capture1.PNG" alt="Resized box">
 
 Now, there it is! A much more reliable occlusion filter. Still, it is not 100% accurate, but I can assure you that it works most of the time. You can change the value of depth margin, patch ratio, and resize ratio to get the result that you think better. Run test_draw_bb.py to quickly see the algorithm in action. There are some other supplementary functions that you can use, please look at the README explanation in the repo.
+
+### Extraction Using Semantic LIDAR
+
+Since version 0.9.10, CARLA provides instance level segmentation of LIDAR data which I think is useful for bounding box extraction. Therefore, I have made another algorithm using that sensor to extract vehicle's bounding boxes and it is more simple and stable than using depth image. The algorithm is simple, it only need to search for LIDAR points that have nonzero instance tag which represent points that lay on a vehicle. But before that, we need to apply angle and distance filter so we only have points that are inside camera FOV. From these points, we can extract list of unique instance or actor IDs of the vehicle hit by the LIDAR. If we deploy the semantic LIDAR and camera close enough, the resulting vehicles list are already vehicles that are not occluded to camera view because in this case what are visible to LIDAR must be visible to camera too. The picture below shows how the semantic lidar points are projected to camera image. Black points represent points that hit dynamic vehicle, while white points represent points that hit static object.
+
+<img src="003776.jpg" alt="Projection of semantic LIDAR to camera image">
 
 Anyway, I am still looking forward the official 2D bounding box extractor by the CARLA team. Also, I would like to express my thanks to the developers since I am using CARLA Simulator for my thesis research. It is very helpful. Thanks a lot!
 
