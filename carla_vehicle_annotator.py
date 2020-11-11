@@ -2,6 +2,7 @@
 ### By Mukhlas Adib
 ### Based example from CARLA Github client_bounding_boxes.py
 ### 2020
+### Last tested on CARLA 0.9.10.1
 
 ### All of functions in PART 1 and PART 2 are copied from client_bounding_boxes.py example
 ### Except functions that convert 3D bounding boxes to 2D bounding boxes
@@ -29,8 +30,12 @@ import carla
 ### Use this function to get 2D bounding boxes of visible vehicles to camera using semantic LIDAR
 def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100):
     filtered_data = filter_lidar(lidar_data, camera, max_dist)
-    visible_id = np.unique([p.object_idx for p in filtered_data])
-    visible_vehicles = [v for v in vehicles if v.id in visible_id]
+    
+    ### Waiting for next CARLA update, due to issue in object_idx
+    # visible_id = np.unique([p.object_idx for p in filtered_data])
+    # visible_vehicles = [v for v in vehicles if v.id in visible_id]
+    ###
+    
     bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in visible_vehicles]
     return bounding_boxes_2d, filtered_data
 
