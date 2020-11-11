@@ -32,6 +32,11 @@ from matplotlib import pyplot as plt
 import cv2
 import carla_vehicle_annotator as cva
 
+### Set to True if you need to save the data in darknet training format, False otherwise
+save_darknet = True 
+###
+
+
 def retrieve_data(sensor_queue, frame, timeout=1):
     while True:
         try:
@@ -212,13 +217,22 @@ def main():
                 vehicles = cva.snap_processing(vehicles_raw, snap)
 
                 # Calculating visible bounding boxes
-                v_bboxes, filtered_data = cva.auto_annotate_lidar(vehicles, cam, lidar_img, show_img = rgb_img)
+                filtered_out,_ = cva.auto_annotate_lidar(vehicles, cam, lidar_img, show_img = rgb_img, json_path = 'vehicle_class_json_file.txt')
+                
                 # Save the results
-                cva.save_output(rgb_img, v_bboxes, save_patched=True, out_format='json')
+                cva.save_output(rgb_img, filtered_out['bbox'], filtered_out['class'], save_patched=True, out_format='json')
+
+                # Save the results to darknet format
+                if save_darknet: cva.save2darknet(filtered_out['bbox'], filtered_out['class'], rgb_img)
+
                 time_sim = 0
             time_sim = time_sim + settings.fixed_delta_seconds
 
     finally:
+        try:
+            if save_darknet: cva.save2darknet(None, None, None, save_train = True)
+        except:
+            print('No darknet formatted data directory found')
         try: 
             cam.stop()
             lidar.stop()

@@ -28,7 +28,7 @@ import carla
 #####################################################
 
 ### Use this function to get 2D bounding boxes of visible vehicles to camera using semantic LIDAR
-def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100, show_img = None):
+def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100, min_detect = 5, show_img = None, json_path = None):
     filtered_data = filter_lidar(lidar_data, camera, max_dist)
     if show_img != None:
         show_lidar(filtered_data, camera, show_img)
@@ -38,10 +38,17 @@ def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100, show_img =
     filtered_data = get_points_id(filtered_data, vehicles, camera, max_dist)
     ###
     
-    visible_id = np.unique([p.object_idx for p in filtered_data])
+    visible_id, idx_counts = np.unique([p.object_idx for p in filtered_data], return_counts=True)
     visible_vehicles = [v for v in vehicles if v.id in visible_id]
+    visible_vehicles = [v for v in vehicles if idx_counts[(visible_id == v.id).nonzero()[0]] >= min_detect]
     bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in visible_vehicles]
-    return bounding_boxes_2d, filtered_data
+    
+    filtered_out = {}
+    filtered_out['vehicles'] = visible_vehicles
+    filtered_out['bbox'] = bounding_boxes_2d
+    if json_path is not None:
+        filtered_out['class'] = get_vehicle_class(visible_vehicles, json_path)
+    return filtered_out, filtered_data
 
 ### Use this function to get 2D bounding boxes of visible vehicle to camera
 def auto_annotate(vehicles, camera, depth_img, max_dist=100, depth_margin=-1, patch_ratio=0.5, resize_ratio=0.5, json_path=None):
