@@ -2,6 +2,7 @@
 ### By Mukhlas Adib
 ### Based example from CARLA Github client_bounding_boxes.py
 ### 2020
+### Last tested on CARLA 0.9.8
 
 ### This program is a modified version of CARLA example program client_bounding_boxes.py
 ### Except functions that convert 3D bounding boxes to 2D bounding boxes
