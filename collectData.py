@@ -2,6 +2,7 @@
 ### Sensors: RGB Camera (+BoundingBox), De[th Camera, Segmentation Camera, Lidar Camera
 ### By Mukhlas Adib
 ### 2020
+### Last tested on CARLA 0.9.10.1
 
 ### CARLA Simulator is licensed under the terms of the MIT license
 ### For a copy, see <https://opensource.org/licenses/MIT>
