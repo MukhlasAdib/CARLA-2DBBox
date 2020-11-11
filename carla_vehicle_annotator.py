@@ -2,6 +2,7 @@
 ### By Mukhlas Adib
 ### Based example from CARLA Github client_bounding_boxes.py
 ### 2020
+### Last tested on CARLA 0.9.10.1
 
 ### All of functions in PART 1 and PART 2 are copied from client_bounding_boxes.py example
 ### Except functions that convert 3D bounding boxes to 2D bounding boxes
@@ -9,7 +10,6 @@
 ### For a copy, see <https://opensource.org/licenses/MIT>
 ### For more information about CARLA Simulator, visit https://carla.org/
 
-import carla
 import numpy as np
 import PIL
 from PIL import Image
@@ -18,10 +18,37 @@ import json
 import pickle
 import os
 import glob
+import sys
+import cv2
+import carla
+
 
 ### PART 0
 ### Calculate bounding boxes and apply the filter ###
 #####################################################
+
+### Use this function to get 2D bounding boxes of visible vehicles to camera using semantic LIDAR
+def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100, min_detect = 5, show_img = None, json_path = None):
+    filtered_data = filter_lidar(lidar_data, camera, max_dist)
+    if show_img != None:
+        show_lidar(filtered_data, camera, show_img)
+
+    ### Delete this section if object_idx issue has been fixed in CARLA
+    filtered_data = np.array([p for p in filtered_data if p.object_idx != 0])
+    filtered_data = get_points_id(filtered_data, vehicles, camera, max_dist)
+    ###
+    
+    visible_id, idx_counts = np.unique([p.object_idx for p in filtered_data], return_counts=True)
+    visible_vehicles = [v for v in vehicles if v.id in visible_id]
+    visible_vehicles = [v for v in vehicles if idx_counts[(visible_id == v.id).nonzero()[0]] >= min_detect]
+    bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in visible_vehicles]
+    
+    filtered_out = {}
+    filtered_out['vehicles'] = visible_vehicles
+    filtered_out['bbox'] = bounding_boxes_2d
+    if json_path is not None:
+        filtered_out['class'] = get_vehicle_class(visible_vehicles, json_path)
+    return filtered_out, filtered_data
 
 ### Use this function to get 2D bounding boxes of visible vehicle to camera
 def auto_annotate(vehicles, camera, depth_img, max_dist=100, depth_margin=-1, patch_ratio=0.5, resize_ratio=0.5, json_path=None):
@@ -241,7 +268,6 @@ def filter_occlusion_1p(vehicles_list, v_transform, v_transform_s, sensor, depth
 
 ### Apply angle and distance filters in one function
 def filter_angle_distance(vehicles_list, sensor, max_dist=100):
-    depth_patches = []
     vehicles_transform , vehicles_transform_s = get_list_transform(vehicles_list, sensor)
     vehicles_list , vehicles_transform , vehicles_transform_s = filter_distance(vehicles_list, vehicles_transform, vehicles_transform_s, sensor, max_dist)
     vehicles_list , vehicles_transform , vehicles_transform_s = filter_angle(vehicles_list, vehicles_transform, vehicles_transform_s, sensor)
@@ -260,7 +286,7 @@ def filter_occlusion_bbox(bounding_boxes, vehicles, sensor, depth_img, v_class=N
     selector = []
     patches = []
     patch_delta = []
-    v_transform, v_transform_s = get_list_transform(vehicles, sensor)
+    _, v_transform_s = get_list_transform(vehicles, sensor)
     
     for v, vs, bbox in zip(vehicles,v_transform_s,bounding_boxes):
         dist = vs[:,0]
@@ -332,7 +358,71 @@ def depth_debug(depth_patches, depth_img, sensor):
         crop_bbox = [(u1,v1),(u2,v2)]
         img_draw.rectangle(crop_bbox, outline ="red")
     image.show()
+
+### Filter out lidar points that are outside camera FOV
+def filter_lidar(lidar_data, camera, max_dist):
+    CAM_W = int(camera.attributes['image_size_x'])
+    CAM_H = int(camera.attributes['image_size_y'])
+    CAM_HFOV = float(camera.attributes['fov'])
+    CAM_VFOV = np.rad2deg(2*np.arctan(np.tan(np.deg2rad(CAM_HFOV/2))*CAM_H/CAM_W))
+    lidar_points = np.array([[p.point.y,-p.point.z,p.point.x] for p in lidar_data])
     
+    dist2 = np.sum(np.square(lidar_points), axis=1).reshape((-1))
+    p_angle_h = np.absolute(np.arctan2(lidar_points[:,0],lidar_points[:,2]) * 180 / np.pi).reshape((-1))
+    p_angle_v = np.absolute(np.arctan2(lidar_points[:,1],lidar_points[:,2]) * 180 / np.pi).reshape((-1))
+
+    selector = np.array(np.logical_and(dist2 < (max_dist**2), np.logical_and(p_angle_h < (CAM_HFOV/2), p_angle_v < (CAM_VFOV/2))))
+    filtered_lidar = [pt for pt, s in zip(lidar_data, selector) if s]
+    return filtered_lidar
+
+### Save camera image with projected lidar points for debugging purpose
+def show_lidar(lidar_data, camera, carla_img):
+    lidar_np = np.array([[p.point.y,-p.point.z,p.point.x] for p in lidar_data])
+    cam_k = get_camera_intrinsic(camera)
+
+    # Project LIDAR 3D to Camera 2D
+    lidar_2d = np.transpose(np.dot(cam_k,np.transpose(lidar_np)))
+    lidar_2d = (lidar_2d/lidar_2d[:,2].reshape((-1,1))).astype(int)
+
+    # Visualize the result
+    c_scale = []
+    for pts in lidar_data:
+        if pts.object_idx == 0: c_scale.append(255)
+        else: c_scale.append(0)
+
+    carla_img.convert(carla.ColorConverter.Raw)
+    img_bgra = np.array(carla_img.raw_data).reshape((carla_img.height,carla_img.width,4))
+    img_rgb = np.zeros((carla_img.height,carla_img.width,3))
+    img_rgb[:,:,0] = img_bgra[:,:,2]
+    img_rgb[:,:,1] = img_bgra[:,:,1]
+    img_rgb[:,:,2] = img_bgra[:,:,0]
+    img_rgb = np.uint8(img_rgb)
+
+    for p,c in zip(lidar_2d,c_scale):
+        c = int(c)
+        cv2.circle(img_rgb,tuple(p[:2]),1,(c,c,c),-1)
+    filename = 'out_lidar_img/%06d.jpg' % carla_img.frame
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
+    img_rgb = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2RGB)
+    cv2.imwrite(filename, img_rgb)
+
+### Add actor ID of the vehcile hit by the lidar points
+### Only used before the object_id issue of semantic lidar solved
+def get_points_id(lidar_points, vehicles, camera, max_dist):
+    vehicles_f = filter_angle_distance(vehicles, camera, max_dist)
+    fixed_lidar_points = []
+    for p in lidar_points:
+        sensor_world_matrix = get_matrix(camera.get_transform())
+        pw = np.dot(sensor_world_matrix, [[p.point.x],[p.point.y],[p.point.z],[1]])
+        pw = carla.Location(pw[0,0],pw[1,0],pw[2,0])
+        for v in vehicles_f:
+            if v.bounding_box.contains(pw, v.get_transform()):
+                p.object_idx = v.id
+                break
+        fixed_lidar_points.append(p)
+    return fixed_lidar_points
+        
 #######################################################
 #######################################################
 
@@ -465,7 +555,7 @@ def save2darknet(bboxes, vehicle_class, carla_img, data_path = '', cc_rgb = carl
             with open(data_path + '/train.txt', 'w') as filetxt:
                 filetxt.write(trainstr)
                 filetxt.close()
-            
+
 ### Use this function to convert depth image (carla.Image) to a depth map in meter
 def extract_depth(depth_img):
     depth_img.convert(carla.ColorConverter.Depth)
