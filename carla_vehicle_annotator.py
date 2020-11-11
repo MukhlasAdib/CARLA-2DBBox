@@ -28,14 +28,18 @@ import carla
 #####################################################
 
 ### Use this function to get 2D bounding boxes of visible vehicles to camera using semantic LIDAR
-def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100):
+def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist = 100, show_img = None):
     filtered_data = filter_lidar(lidar_data, camera, max_dist)
-    
-    ### Waiting for next CARLA update, due to issue in object_idx
-    # visible_id = np.unique([p.object_idx for p in filtered_data])
-    # visible_vehicles = [v for v in vehicles if v.id in visible_id]
+    if show_img != None:
+        show_lidar(filtered_data, camera, show_img)
+
+    ### Delete this section if object_idx issue has been fixed in CARLA
+    filtered_data = np.array([p for p in filtered_data if p.object_idx != 0])
+    filtered_data = get_points_id(filtered_data, vehicles, camera, max_dist)
     ###
     
+    visible_id = np.unique([p.object_idx for p in filtered_data])
+    visible_vehicles = [v for v in vehicles if v.id in visible_id]
     bounding_boxes_2d = [get_2d_bb(vehicle, camera) for vehicle in visible_vehicles]
     return bounding_boxes_2d, filtered_data
 
@@ -393,8 +397,25 @@ def show_lidar(lidar_data, camera, carla_img):
     filename = 'out_lidar_img/%06d.jpg' % carla_img.frame
     if not os.path.exists(os.path.dirname(filename)):
         os.makedirs(os.path.dirname(filename))
+    img_rgb = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2RGB)
     cv2.imwrite(filename, img_rgb)
 
+### Add actor ID of the vehcile hit by the lidar points
+### Only used before the object_id issue of semantic lidar solved
+def get_points_id(lidar_points, vehicles, camera, max_dist):
+    vehicles_f = filter_angle_distance(vehicles, camera, max_dist)
+    fixed_lidar_points = []
+    for p in lidar_points:
+        sensor_world_matrix = get_matrix(camera.get_transform())
+        pw = np.dot(sensor_world_matrix, [[p.point.x],[p.point.y],[p.point.z],[1]])
+        pw = carla.Location(pw[0,0],pw[1,0],pw[2,0])
+        for v in vehicles_f:
+            if v.bounding_box.contains(pw, v.get_transform()):
+                p.object_idx = v.id
+                break
+        fixed_lidar_points.append(p)
+    return fixed_lidar_points
+        
 #######################################################
 #######################################################
 

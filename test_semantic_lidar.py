@@ -197,7 +197,6 @@ def main():
             # Check whether it's time for sensor to capture data
             if time_sim >= 1:
                 data = [retrieve_data(q,nowFrame) for q in q_list]
-                print(data)
                 assert all(x.frame == nowFrame for x in data if x is not None)
 
                 # Skip if any sensor data is not available
@@ -213,9 +212,9 @@ def main():
                 vehicles = cva.snap_processing(vehicles_raw, snap)
 
                 # Calculating visible bounding boxes
-                v_bboxes, filtered_data = cva.auto_annotate_lidar(vehicles, cam, lidar_img)
+                v_bboxes, filtered_data = cva.auto_annotate_lidar(vehicles, cam, lidar_img, show_img = rgb_img)
                 # Show projection of LIDAR to Camera for debugging purpose
-                cva.show_lidar(filtered_data, cam, rgb_img)
+                #cva.show_lidar(filtered_data, cam, rgb_img)
                 # Save the results
                 cva.save_output(rgb_img, v_bboxes, save_patched=True, out_format='json')
                 time_sim = 0
