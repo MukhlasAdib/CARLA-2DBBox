@@ -6,6 +6,8 @@ This repo contains several python file that can be used to automatically create 
 
 **IMPORTANT.** Some parts of the provided code are not made by me and copied from CARLA example code. CARLA Simulator and its example code are licenced under the terms of MIT Licence. For more information about CARLA, I highly recommend you to visit their website https://carla.org.
 
+Visit this [page](https://mukhlasadib.github.io/CARLA-2DBBox/) to see the principles of the algorithm.
+
 ## `carla_vehicle_annotator.py`
 
 There are several functions that is provided in this module. However, you only need these main functions to make this module works properly.
